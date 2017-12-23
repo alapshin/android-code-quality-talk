@@ -1,0 +1,308 @@
+\documentclass{beamer}
+
+\usetheme{metropolis}
+\usefonttheme{serif}
+\setbeameroption{hide notes}
+\setbeamercolor{note page}{bg=white}
+\setbeamercolor{note title}{bg=white}
+\setbeamertemplate{bibliography item}{}
+
+\usepackage{fontspec}
+\setmainfont{Noto Serif}
+\setsansfont{Noto Sans}
+\setmonofont{Noto Mono}
+\newfontfamily{\cyrillicfont}{Noto Serif}
+\newfontfamily{\cyrillicfonttt}{Noto Mono}
+\usepackage{microtype}
+
+\usepackage{polyglossia}
+\setmainlanguage{english}
+\setotherlanguage{russian}
+
+\usepackage{csquotes}
+\usepackage{graphicx}
+\usepackage{ragged2e}
+\usepackage[sorting=none]{biblatex}
+
+% Remove last dot from biblatex entries
+\renewcommand{\finentrypunct}{}
+% Replace dot between title and url with colon
+\renewcommand{\newunitpunct}{\addcolon\space}
+% Remove URL prefix from url
+\DeclareFieldFormat{url}{\url{#1}}
+\addbibresource{android-code-quality-tools.bib}
+
+\usepackage{hyperref}
+\hypersetup{breaklinks=true,unicode=true,pdfencoding=auto}
+
+\usepackage{shellesc}
+\usepackage[outputdir=build]{minted}
+
+\author{Андрей Лапшин}
+\date{2017-12-26}
+\title{Инструменты качества кода для Android}
+
+
+\begin{document}
+\begin{frame}
+    \titlepage
+    \note{
+        Всем привет. Меня зовут Андрей Лапшин, я занимаюсь разработкой
+        под Android и мой доклад будет посвящен различный инструментам,
+        которые упрощают процесс поддержания кода в "качественном" состоянии.
+    }
+\end{frame}
+
+\begin{frame}
+    \frametitle{Зачем?}
+    \pause
+    \begin{itemize}
+        \item{Корректность}
+            \pause
+        \item{Производительность}
+            \pause
+        \item{Простота поддержки}
+    \end{itemize}
+    \note<1>{
+        Прежде чем рассматривать конкретные инструменты нам нужно определиться,
+        что мы понимаем под "качественным" кодом. На первый взгляд мы можем определить
+        "качественный" код, как код который выполняет поставленную задачу без ошибок.
+        Однако данное определение оставляет желать лучшего.
+    }
+    \note<2>{
+        Во-первых, как мы можем гарантировать что в приложении нет ошибок?
+        Как вариант, мы можем внедрить тестирование (ручное и/или автоматическое)
+        Но ручное тестирование и написание тестов требует времени и как правило
+        сосредоточено на тестировании бизнес-логики. В тоже время практически
+        любом языке программировани/фреймворке есть набор паттернов про которые
+        известно, что они могут привести к ошибкам. Например сравнение строк
+        Было бы хорошо, чтобы такие ситуации отлавливались автоматический и как можно раньше.
+    }
+    \note<3>{
+        Во-вторых, в этом определении нет ни слова про производительность.
+        Возможно, в данный момент производительность приемлемая, но где гарантия
+        что она оптимальна и в будущем при появлении новых данных не изменится?
+        Опять же мы можем прибегнуть к тестированию, но сталкиваемся c необходимостью
+        выделения времени. В тоже время есть известные паттерны, которые ведут
+        к снижению производительности, например выделение памяти в \texttt{onDraw}
+    }
+    \note<4>{
+        В-третьих, даже если написанный код корректен и производителен возникает
+        вопрос о простоте поддержки этого кода в будущем. Возможно этот код
+        написан в одном файле размеров несколько тысяч строк и при этом ещё
+        части этого файла используют разные стили оформления в разных частях.
+    }
+\end{frame}
+
+\begin{frame}
+    \frametitle{Android Studio (и другие IDE от JetBrains)}
+    \begin{block}{Возможности}
+        \begin{itemize}
+            \item{Потенциальные ошибки}
+            \item{Проблемы производительности}
+            \item{Поиск неиспользуемого кода}
+            \item{Проверка кода на сложность}
+            \item{и т. д.}
+        \end{itemize}
+    \end{block}
+    \begin{block}{Запуск}
+        Пункт главного меню \texttt{Analyze | Inspect Code}
+    \end{block}
+    \note{
+        Каждая IDE от JetBrains (Android Studio в том числе) поставляется с набором
+        проверок.
+    }
+\end{frame}
+\begin{frame}
+    \frametitle{Android Studio (и другие IDE от JetBrains)}
+    \begin{block}{Плюсы}
+        \begin{itemize}
+            \item{Отличная интеграция в IDE}
+            \item{Поиск проблем на лету}
+            \item{Большой набор проверок для разных языков}
+            \item{Возможность автоматического исправления найденных проблем}
+        \end{itemize}
+    \end{block}
+    \begin{block}{Минусы}
+        \begin{itemize}
+            \item{Cложность интеграции в автоматизированный процесс сборки}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Checkstyle}
+    Статический анализатор для проверки кода на соответствие определенному стилю.
+    \begin{block}{Возможности}
+        \begin{itemize}
+            \item{Проверка отступов, пробелов}
+            \item{Наименование переменных}
+            \item{Ограничение на длину строк}
+            \item{Определение неиспользуемых импортов}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Checkstyle}
+    \begin{block}{Плюсы}
+        \begin{itemize}
+            \item{Скорость проверки}
+            \item{Гибкие возможности настройки}
+            \item{Возможность интеграции в автоматизированный процесс сборки}
+        \end{itemize}
+    \end{block}
+    \begin{block}{Минусы}
+        \begin{itemize}
+            \item{Сложность интеграции в IDE}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{FindBugs/SpotBugs}
+    Статический анализатор для поиска потенциальных ошибок и других проблем в
+    Java-коде. Анализирует не исходный код, а сгенерированный байткод.
+    \begin{block}{Возможности}
+        \begin{itemize}
+            \item{Проверка кода на корректность}
+            \item{Проверка на использование известных проблемных подходов}
+            \item{Проверки на производительность}
+            \item{и т. д.}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{FindBugs/SpotBugs}
+    \begin{block}{Плюсы}
+        \begin{itemize}
+            \item{Высокая точность}
+            \item{Возможность интеграции в автоматизированный процесс сборки}
+        \end{itemize}
+    \end{block}
+    \begin{block}{Минусы}
+        \begin{itemize}
+            \item{Сложность интеграции в IDE}
+            \item{Возможны ложные срабатывания в Kotlin коде}
+            \item{Временные и аппаратные требования}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{ErrorProne}
+    Статический анализатор для поиска потенциальных ошибок в Java-коде на этапе
+    компиляции.
+    \begin{block}{Возможности}
+        \begin{itemize}
+            \item{Проверка кода на корректность}
+            \item{Проверка на использование известных проблемных подходов}
+            \item{Проверка на стилевые несоответствия}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{ErrorProne}
+    \begin{block}{Плюсы}
+        \begin{itemize}
+            \item{Простота интеграции в IDE}
+            \item{Простота интеграции в автоматизированный процесс сборки}
+            \item{Минимальное число ложных срабатываний}
+            \item{Наличие проверок для популярных библиотек}
+            \item{Возможность автоматического исправления найденых ошибок}
+        \end{itemize}
+    \end{block}
+    \begin{block}{Минусы}
+        \begin{itemize}
+            \item{Прерывает процесс компиляции на первой найденной ошибке}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Android Lint}
+    Статический анализатор для поиска потенциальных ошибок и проблем в Android-проектах.
+    \begin{block}{Возможности}
+        \begin{itemize}
+            \item{Поиск потенциальных ошибок}
+            \item{Поиск проблем производительности}
+            \item{Поиск проблем  локализации}
+            \item{Поиск неиспользуемых ресурсов}
+            \item{и т. д.}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Android Lint}
+    \begin{block}{Плюсы}
+        \begin{itemize}
+            \item{Простота интеграции в IDE}
+            \item{Простота интеграции в автоматизированный процесс сборки}
+        \end{itemize}
+    \end{block}
+    \begin{block}{Минусы}
+        \begin{itemize}
+            \item{Нет поддержки Kotlin кода при запуске из командной строки}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Detekt}
+    Статический анализатор для Kotlin кода.
+    \begin{block}{Возможности}
+        \begin{itemize}
+            \item{Анализ сложности кода}
+            \item{Поиск проблем со стилем кода}
+            \item{Обнаружение потенциальных ошибок}
+            \item{Обнаружение потенциальных проблем с производительностью}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Detekt}
+    \begin{block}{Плюсы}
+        \begin{itemize}
+            \item{Широкие возможности по конфигурации}
+            \item{Возможность интеграции в автоматизированный процесс сборки}
+        \end{itemize}
+    \end{block}
+    \begin{block}{Минусы}
+        \begin{itemize}
+            \item{Сложность интеграции в IDE}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{StrictMode}
+    Системный класс, позволяющий отлавливать определенный проблемы в ходе
+    выполнения приложения и реагировать на них
+    \begin{block}{Возможности}
+        \begin{itemize}
+            \item{Обнаружение сетевых запросов в главном потоке}
+            \item{Обнаружение чтение/записи на диск в главном потоке}
+            \item{Обнаружение http-трафика}
+            \item{Обнаружение утечек ресурсов}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{LeakCanary}
+    Библиотека для обнаружения утечек памяти.
+\end{frame}
+
+\begin{frame}
+    \frametitle{Ссылки}
+    \nocite{*}
+    \RaggedRight
+    \AtNextBibliography{\scriptsize}
+    \printbibliography[heading=none]
+\end{frame}
+
+\end{document}
